@@ -1,16 +1,18 @@
-![Minimum Rust: 1.79](https://img.shields.io/badge/Minimum%20Rust%20Version-1.79-green.svg)
+![Minimum Rust: 1.85](https://img.shields.io/badge/Minimum%20Rust%20Version-1.85-green.svg)
 [![crates.io](https://img.shields.io/crates/v/prinThor.svg)](https://crates.io/crates/prinThor)
 ![CI](https://github.com/cbruiz/printhor/actions/workflows/rust.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/cbruiz/printhor/badge.svg?branch=main)](https://coveralls.io/github/cbruiz/printhor?branch=main)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Discord Shield](https://discordapp.com/api/guilds/1169965662618259456/widget.png?style=shield)
 
-<h3>Printhor: The highly reliable but not necessarily functional 3D printer firmware</h3>
+<h3>Printhor: The highly reliable but not necessarily functional 3D printer and robotics firmware</h3>
 
 <h5><p align="center"><i>If you are using this product or like the project, please <a href="https://github.com/cbruiz/printhor/stargazers">★</a> this repository to show your support! 🤩</i></p></h5>
 
 # Overview
 
-Printhor is a generic a hardware-agnostic firmware framework focused on FDM printers, CNC and Engravers implemented in Rust.
+Printhor is a generic and hardware-agnostic (firmware) framework for FDM printers, CNC, Engravers and robots implemented in Rust.
+
+Basically, it's a GCode interpreter capable to process a stream of GCodes (position and control orders), schedule them, compute a motion profile on the fly and finally perform the hardware level instructions (step pulses, PWM signals, ... or even dataframes broadcast for a dedicated break-board) in real time.
 
 There are many productive firmwares in the community like gbrl, marlin, reprap, etc. Each single one have a concrete approach and guidelines.
 This one aims to provide a research environment for not strictly productive purpose, but a reliable platform with the following goals:
@@ -26,17 +28,23 @@ This one aims to provide a research environment for not strictly productive purp
 
 Which means the principal short-term goal is not to develop a productive firmware for final user rather than providing an environment in which anyone can test and experiment any concrete approach to feed the community with good quality, state-of-the-art or innovative feature increments.
 
+## Documentation (work in progress)
+
+[Documentation and guides](doc/README.md)
+
 ## Features
 * "Clean" hardware abstraction.
 * Vector geometry / linear algebra calculus for kinematics
-  * Smooth acceleration and jerk limited motion plan leveraging "Trajectory with Double S Velocity Profile" [1]. Briefly explained at [Plan implementation](src/bin/printhor/control/motion/profile.rs) and visualy explained in [Printhor motion plan. A simplified overview of the velocity integration](https://www.geogebra.org/m/hwpnmhcu) (GeoGebra).
+  * Smooth acceleration and jerk limited motion plan leveraging "Trajectory with Double S Velocity Profile" [1]. Briefly explained at [Plan implementation](printhor/src/bin/motion/profile.rs) and visually explained in [Printhor motion plan. A simplified overview of the velocity integration](https://www.geogebra.org/m/hwpnmhcu) (GeoGebra).
     
     "[1] Biagiotti, L., Melchiorri, C.: Trajectory Planning for Automatic Machines and Robots. Springer, Heidelberg (2008). [DOI:10.1007/978-3-540-85629-0](https://doi.org/10.1007/978-3-540-85629-0)"
-  * High precision and deterministic kinematics and computations with configurable resolution. Briefly explained at [Stepper Task](src/bin/printhor/control/task_stepper.rs).
+  * High precision and deterministic kinematics and computations with configurable resolution. Briefly explained at [Stepper Task](printhor/src/bin/tasks/task_stepper.rs).
   * Simple and efficient cornering algorithm based on pure linear algebra. Foundation implicitly explained at [Printhor naïve cornering algorithm](https://www.geogebra.org/m/ft8svrwd) (GeoGebra).
-* Precise thermal control plan with PID. Briefly exlained at [Temperature Task](src/bin/printhor/control/task_temperature.rs).
+* Precise thermal control plan with PID. Briefly explained at [Temperature Task](printhor/src/bin/tasks/task_temperature.rs).
 * Simple, secure and efficient resource and peripherals sharing.
 * Clean and simple async tasks coordination/intercommunication with event based primitives.
+* High behavior customization.
+* Low level action distribution leveraging dedicated break-boards. 
 * Wide GCode standard coverage.
 * Native simulation for development and benchmarking.
   * Many others coming.
@@ -49,9 +57,9 @@ Which means the principal short-term goal is not to develop a productive firmwar
     </thead>
     <tbody>
         <tr><td>Simulation</td><td>Functional</td></tr>
-        <tr><td>I/O</td><td>Testing</td></tr>
-        <tr><td>State and logic</td><td>Incubation</td></tr>
-        <tr><td>Motion Planner</td><td>Testing</td></tr>
+        <tr><td>I/O</td><td>Functional</td></tr>
+        <tr><td>State and logic</td><td>Testing</td></tr>
+        <tr><td>Motion Planner</td><td>Functional</td></tr>
         <tr><td>Kinematics</td><td>Testing</td></tr>
         <tr><td>Thermal Control</td><td>Incubation</td></tr>
         <tr><td>Display</td><td>TODO</td></tr>
@@ -67,7 +75,20 @@ If you are interested in this project and want to collaborate, you are welcome.
 A Discord server has been created for informal discussions. Otherwise, GitHub Issues and Pull Requests are preferred.  
 [![Discord Banner 4](https://discordapp.com/api/guilds/1169965662618259456/widget.png?style=banner4)](https://discord.gg/VSag6T4KS6)
 
-# Checkout
+# Compiling
+
+## Fast track
+
+<a href="https://idx.google.com/import?url=https%3A%2F%2Fgithub.com%2Fcbruiz%2Fprinthor">
+  <img
+    height="32"
+    alt="Open in IDX"
+    src="https://cdn.idx.dev/btn/open_dark_32.svg">
+</a>
+
+## Step by step
+
+### Checkout
 
 ```shell
 git clone https://github.com/cbruiz/printhor
@@ -75,7 +96,7 @@ cd printhor
 git submodule update --init --recursive
 ```
 
-# Build
+### Build
 
 The minimal toolset required to build and run is:
 * Rust, in order to compile 
@@ -84,9 +105,9 @@ The minimal toolset required to build and run is:
 * __[Optionally]__ cargo-bloat and cargo-size utils are great to analyze the code size.
 * __[Optionally]__ A Rust IDE, like [Jetbrains IDE suite](https://www.jetbrains.com/) (IntelliJ, CLion or RustRover) (recommended), Visual Studio Code (also fine), or others
 
-## Prerequisites: Rust and toolchain
+### Prerequisites: Rust and toolchain
 
-This crate requires **Rust >= 1.79**.
+This crate requires **Rust >= 1.85**.
 
 For official guide, please see https://www.rust-lang.org/tools/install
 
@@ -117,7 +138,7 @@ cargo install probe-run
 The framework with a set of mocked peripherals (most of them without any logic).
 Provides a commandline GCode prompt on standard input
 
-__Note__: A SDCard image in ./data/ is required to be open if sdcard feature is enabled in native :)
+__Note__: A SDCard image in ./data/ is required to be open if sd-card feature is enabled in native :)
 
 ```shell
 RUST_LOG=info cargo run --bin printhor
@@ -143,12 +164,12 @@ socat pty,link=printhor,rawer EXEC:target/debug/printhor,pty,rawer
 
 | Board                                                                                             | Status            |
 |---------------------------------------------------------------------------------------------------|-------------------|
-| [SKR Mini E3 V2.0](hwi-boards/printhor-hwi_skr_mini_e3/README.md)                                 | Initial           |
 | [SKR Mini E3 V3.0](hwi-boards/printhor-hwi_skr_mini_e3/README.md)                                 | Almost Functional |
 | [MKS Robin Nano v3.1](hwi-boards/printhor-hwi_mks_robin_nano/README.md)                           | Almost Functional |
 | [Nucleo-f410rb + Arduino CNC Hat v3](hwi-boards/printhor-hwi_nucleo_64_arduino_cnc_hat/README.md) | Almost Functional |
 | [Nucleo-l476rg + Arduino CNC Hat v3](hwi-boards/printhor-hwi_nucleo_64_arduino_cnc_hat/README.md) | Almost Functional |
 | [Raspberry PI 2040](hwi-boards/printhor-hwi_rp_2040/README.md)                                    | Draft             |
+| [ESP32-S3-WROOM](hwi-boards/printhor-hwi_esp32/README.md)                                         | Naïve Skeleton    |
 
 
 ## Extra utilery
@@ -156,19 +177,18 @@ socat pty,link=printhor,rawer EXEC:target/debug/printhor,pty,rawer
 A simple stand-alone std binary to experiment with motion plan and see what it does (kind of playground):
 
 ```shell
-cd s-plot
-cargo run
+cargo run --profile release --bin s_plot --features s-plot-bin
 ```
 
 ### Example output with the current plotting style approach:
 As Image:
-![alt text](design/motion_plan.png "Motion Plan")
+![alt text](printhor/img/motion_plan.png "Motion Plan")
 
 As Vector:
 
-<object data="./design/motion_plan.pdf" type="application/pdf" width="700px" height="700px">
-  <embed src="./design/motion_plan.pdf">
-    <p style="text-align: center;">This browser does not support PDFs. Please <a href="./design/motion_plan.pdf">Download the PDF</a> to view it</p>
+<object data="printhor/img/motion_plan.pdf" type="application/pdf" width="700px" height="700px">
+  <embed src="printhor/img/motion_plan.pdf">
+    <p style="text-align: center;">This browser does not support PDFs. Please <a href="printhor/img/motion_plan.pdf">Download the PDF</a> to view it</p>
 </object>
 
 There are (currently) two plots:
@@ -180,7 +200,7 @@ There are (currently) two plots:
   * A slopped gray polyline for the online derivation of __real__ (discrete) position datapoints in the sampling interval.
 
 ### Example output with the deprecated plotting style:
-![alt text](design/motion_plan_old.png "Motion Plan")
+![alt text](printhor/img/motion_plan_old.png "Motion Plan")
 
 This plot were self-explanatory, but deprecated in flavor of the previous one.
 We are keeping it because it is clear and useful for a high level understanding.
@@ -191,17 +211,14 @@ We are keeping it because it is clear and useful for a high level understanding.
   * Remove unwrap/panic calls.
   * Remove unsafe code (a little bit, but there it is)
   * Remove trivial/redundant computation __but not compromising readability__.
-* Unit test 
-* CoreXY support
 * Display
 * I/O control
   * xonxoff
-* Adaptative planing cost measurement to take a decision on chaining or not and how much (AKA Cornering).
-* exfat support could be great.
+* exFAT support would be great.
 
 # Customization
 
-For a single board, the high-level features (hotend, hotbed, fan, sdcard, ... ) can be activated/deactivated by cargo feature selection or directly editing the main cargo.toml
+For a single board, the high-level features (hotend, hotbed, fan, SDCard, ... ) can be activated/deactivated by cargo feature selection or directly editing the main cargo.toml
 In order to change pins, writing/adapting some code is required, as of now. There is not expected to be, at least in the short term any kind of configuration file.
 
 Because of that limitation (Rust makes that hard to tackle because of the strict typing), a clean code organization it's crucial and pretty straightforward to assume slight customizations by editing code.  
@@ -214,15 +231,13 @@ printhor is composed by the following architectural blocks
 * printhor-hwa-common (within the project), as the hardware abstraction layer contract and common machinery
 * A set of crates (withn the project) for each harware/board. Currently:
   * printhor-hwi_native : The native simulator.
-  * printhor-hwi_skr_mini_e3 : Two boards: V2 (See [Datasheets/SKR_MINI_E3-V2.0](datasheets/SKR_MINI_E3-V2.0)) and V3 (See [Datasheets/SKR_MINI_E3-V3.0](datasheets/SKR_MINI_E3-V3.0))
+  * printhor-hwi_skr_mini_e3 : A BigTreeTech SKR Mini E3 V3 (See [Datasheets/SKR_MINI_E3-V3.0](datasheets/SKR_MINI_E3-V3.0)).
   * printhor-hwi_mks_robin_nano_v3_1 : (See [Datasheets/MKS-ROBIN-NANO-V3.1](datasheets/MKS-ROBIN-NANO-V3.1))
-  * printhor-hwi_nucleo_64_arduino_cnc_hat : A Nucleo-64 development board (currently L476RG or F410RB) with Arduino CNC Shield v3.x (See [Datasheets/NUCLEO-L476RG_CNC_SHIELD_V3](datasheets/NUCLEO-L476RG_CNC_SHIELD_V3))
+  * printhor-hwi_nucleo_64_arduino_cnc_hat : A Nucleo-64 development board (currently L476RG or F410RB) with Arduino CNC Shield v3.x (See [Datasheets/NUCLEO-L476RG_CNC_SHIELD_V3](datasheets/NUCLEO-L476RG))
 
-Intentionally, traits are in general avoided when not strictly required in favour of defining a more decoupled and easy to evolve interface based on:
+Intentionally, traits are in general avoided in HWI layer when not strictly required in favour of defining a more decoupled and easy to evolve interface based on:
 * type aliases
 * module exports
-
-Diagram is Work in Progress
 
 # Similar, related software and shout-outs
 
@@ -434,8 +449,8 @@ Gcode implementation status, as from https://reprap.org/wiki/G-code
     <tr>
         <td rowspan="1">M37</td>
         <td>*</td>
-        <td>Simulation mode</td>
-        <td>WIP</td>
+        <td>Simulation mode (Dry run mode)</td>
+        <td>DONE</td>
     </tr>
     <tr>
         <td rowspan="1">M73</td>
@@ -549,13 +564,13 @@ Gcode implementation status, as from https://reprap.org/wiki/G-code
         <td rowspan="1">M117</td>
         <td>*</td>
         <td>Display message</td>
-        <td>WIP</td>
+        <td>DONE</td>
     </tr>
     <tr>
         <td rowspan="1">M118</td>
         <td>*</td>
         <td>Echo message on host</td>
-        <td>WIP</td>
+        <td>DONE</td>
     </tr>
     <tr>
         <td rowspan="1">M119</td>
@@ -801,7 +816,7 @@ Gcode implementation status, as from https://reprap.org/wiki/G-code
         <td rowspan="1">M503</td>
         <td>*</td>
         <td>Report Current Settings</td>
-        <td>TODO</td>
+        <td>WIP</td>
     </tr>
     <tr>
         <td rowspan="1">M504</td>
@@ -1059,7 +1074,7 @@ Gcode implementation status, as from https://reprap.org/wiki/G-code
         <td rowspan="1">G92</td>
         <td>*</td>
         <td>Set Position</td>
-        <td>WIP</td>
+        <td>DONE</td>
     </tr>
     <tr>
         <td rowspan="1">G92.1</td>
@@ -1169,3 +1184,7 @@ Gcode implementation status, as from https://reprap.org/wiki/G-code
     M5
     G4
 
+## Controlling the code size
+
+brew install bloaty
+bloaty ./bloaty -d sections,symbols -n 0  --csv | bloaty-metafile > meta.json
